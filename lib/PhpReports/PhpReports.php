@@ -9,7 +9,11 @@ class PhpReports {
 
 	private static $loader_cache;
 
+	private static $base_path;
+
 	public static function init($config = 'config/config.php') {
+		self::$base_path = dirname(__FILE__) . '/../..';
+		
 		//set up our autoloader
 		spl_autoload_register(array('PhpReports','loader'),true,true);
 
@@ -42,8 +46,8 @@ class PhpReports {
 		//the load order for templates is: "templates/local", "templates/default", "templates"
 		//this means loading the template "html/report.twig" will load the local first and then the default
 		//if you want to extend a default template from within a local template, you can do {% extends "default/html/report.twig" %} and it will fall back to the last loader
-		$template_dirs = array('templates/default','templates');
-		if(file_exists('templates/local')) array_unshift($template_dirs, 'templates/local');
+		$template_dirs = array(self::$base_path . '/' .  'templates/default', self::$base_path . '/' .  'templates');
+		if(file_exists(self::$base_path . '/' .  'templates/local')) array_unshift($template_dirs, self::$base_path . '/' .  'templates/local');
 
 		$loader = new Twig_Loader_Chain(array(
 			new Twig_Loader_Filesystem($template_dirs),
@@ -598,15 +602,20 @@ class PhpReports {
 	 * Autoloader methods
 	 */
 	public static function loader($className) {
+		$dir = getcwd();
+		chdir(self::$base_path);
+
 		if(!isset(self::$loader_cache)) {
 			self::buildLoaderCache();
 		}
 
 		if(isset(self::$loader_cache[$className])) {
 			require_once(self::$loader_cache[$className]);
+			chdir($dir);
 			return true;
 		}
 		else {
+			chdir($dir);
 			return false;
 		}
 	}
